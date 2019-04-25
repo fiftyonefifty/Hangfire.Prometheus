@@ -23,16 +23,4 @@ namespace Hangfire.Prometheus.UnitTests
             Assert.Equal(expectedCount, hangfireMonitorService.FailedJobsCount);
         }
     }
-
-    internal class HangfireMonitorService : IHangfireMonitorService
-    {
-        private IMonitoringApi _hangfireMonitoringApi;
-
-        public HangfireMonitorService(IMonitoringApi hangfireMonitoringApi)
-        {
-            _hangfireMonitoringApi = hangfireMonitoringApi;
-        }
-
-        public long FailedJobsCount => _hangfireMonitoringApi.FailedCount();
-    }
 }
