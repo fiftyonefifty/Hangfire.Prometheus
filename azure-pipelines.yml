@@ -13,7 +13,7 @@ pool:
 steps:
 - task: DotNetCoreInstaller@0
   inputs:
-    version: '2.2.400'
+    version: '2.2.202'
 
 - script: dotnet restore
   displayName: 'Restore'
