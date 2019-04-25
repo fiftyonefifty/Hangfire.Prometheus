@@ -15,10 +15,10 @@ steps:
   inputs:
     version: '2.2.202'
 
-- script: dotnet restore
+- script: dotnet restore ./src/Hangfire.Prometheus
   displayName: 'Restore'
 
-- script: dotnet build -c Release
+- script: dotnet build -c Release ./src/Hangfire.Prometheus
   displayName: 'Build'
 
 - task: DotNetCoreCLI@2
