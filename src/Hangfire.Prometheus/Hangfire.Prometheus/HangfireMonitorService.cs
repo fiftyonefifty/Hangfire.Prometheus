@@ -1,8 +1,8 @@
 ﻿using Hangfire.Storage;
 
-namespace Hangfire.Prometheus.UnitTests
+namespace Hangfire.Prometheus
 {
-    internal class HangfireMonitorService : IHangfireMonitorService
+    public class HangfireMonitorService : IHangfireMonitorService
     {
         private IMonitoringApi _hangfireMonitoringApi;
 

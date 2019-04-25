@@ -2,7 +2,6 @@
 using Xunit;
 using Moq;
 using AutoFixture;
-using System.Collections.Generic;
 
 namespace Hangfire.Prometheus.UnitTests
 {
