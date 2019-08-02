@@ -2,6 +2,6 @@
 {
     public interface IHangfireMonitorService
     {
-        long FailedJobsCount { get; }
+        HangfireJobStatistics GetJobStatistics();
     }
 }

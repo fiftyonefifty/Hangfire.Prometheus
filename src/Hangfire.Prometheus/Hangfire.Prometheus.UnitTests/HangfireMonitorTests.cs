@@ -5,6 +5,7 @@ using Moq;
 using AutoFixture;
 using System.Collections.Generic;
 using System;
+using System.Linq.Expressions;
 
 namespace Hangfire.Prometheus.UnitTests
 {
@@ -16,6 +17,7 @@ namespace Hangfire.Prometheus.UnitTests
         private StatisticsDto _expectedStats;
         private HashSet<string> _expectedRetrySet;
         Mock<JobStorage> _mockStorage;
+        IHangfireMonitorService _hangfireMonitorService;
 
         public HangfireMonitorTests()
         {
@@ -32,16 +34,21 @@ namespace Hangfire.Prometheus.UnitTests
             _mockStorage = new Mock<JobStorage>();
             _mockStorage.Setup(x => x.GetConnection()).Returns(storageConnection.Object);
             _mockStorage.Setup(x => x.GetMonitoringApi()).Returns(mockMonitoringApi.Object);
+
+            _hangfireMonitorService = new HangfireMonitorService(_mockStorage.Object);
         }
 
         [Fact]
-        public void ShouldGetNumberOfFailedJobs()
+        public void ShouldGetNumberOfJobs()
         {
-            long expectedCount = _expectedStats.Failed;
+            HangfireJobStatistics actual = _hangfireMonitorService.GetJobStatistics();
 
-            IHangfireMonitorService hangfireMonitorService = new HangfireMonitorService(_mockStorage.Object);
-
-            Assert.Equal(expectedCount, hangfireMonitorService.FailedJobsCount);
+            Assert.Equal(_expectedStats.Failed, actual.Failed);
+            Assert.Equal(_expectedStats.Enqueued, actual.Enqueued);
+            Assert.Equal(_expectedStats.Scheduled, actual.Scheduled);
+            Assert.Equal(_expectedStats.Processing, actual.Processing);
+            Assert.Equal(_expectedStats.Succeeded, actual.Succeeded);
+            Assert.Equal(_expectedRetrySet.Count, actual.Retry);
         }
     }
 }
