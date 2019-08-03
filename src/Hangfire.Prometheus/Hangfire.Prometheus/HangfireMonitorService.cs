@@ -1,5 +1,4 @@
-﻿using Hangfire.Storage;
-using Hangfire.Storage.Monitoring;
+﻿using Hangfire.Storage.Monitoring;
 
 namespace Hangfire.Prometheus
 {
