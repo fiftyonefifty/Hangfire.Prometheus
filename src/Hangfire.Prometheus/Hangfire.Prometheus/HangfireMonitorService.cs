@@ -1,16 +1,32 @@
-﻿using Hangfire.Storage;
+﻿using Hangfire.Storage.Monitoring;
 
 namespace Hangfire.Prometheus
 {
     public class HangfireMonitorService : IHangfireMonitorService
     {
-        private IMonitoringApi _hangfireMonitoringApi;
+        private const string retrySetName = "retries";
+        private JobStorage _hangfireJobStorage;
 
-        public HangfireMonitorService(IMonitoringApi hangfireMonitoringApi)
+        public HangfireMonitorService(JobStorage hangfireJobStorage)
         {
-            _hangfireMonitoringApi = hangfireMonitoringApi;
+            _hangfireJobStorage = hangfireJobStorage;
         }
+        
+        public HangfireJobStatistics GetJobStatistics()
+        {
+            StatisticsDto hangfireStats = _hangfireJobStorage.GetMonitoringApi().GetStatistics();
+            long retryJobs = _hangfireJobStorage.GetConnection().GetAllItemsFromSet(retrySetName).Count;
 
-        public long FailedJobsCount => _hangfireMonitoringApi.FailedCount();
+            return new HangfireJobStatistics
+            {
+                Failed = hangfireStats.Failed,
+                Enqueued = hangfireStats.Enqueued,
+                Scheduled = hangfireStats.Scheduled,
+                Processing = hangfireStats.Processing,
+                Succeeded = hangfireStats.Succeeded,
+                Retry = retryJobs
+            };
+        
+        }
     }
 }
