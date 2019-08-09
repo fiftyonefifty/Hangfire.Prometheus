@@ -11,13 +11,17 @@ namespace Hangfire.Prometheus.UnitTests
 {
     public class PrometheusExporterTests
     {
-        PrometheusExporter _classUnderTest;
+        private PrometheusExporter _classUnderTest;
 
-        Mock<IHangfireMonitorService> _mockHangfireMonitor;
+        private Mock<IHangfireMonitorService> _mockHangfireMonitor;
 
-        MetricServerMiddleware _prometheusMiddleware;
+        private MetricServerMiddleware _prometheusMiddleware;
 
-        IFixture _autoFixture;
+        private IFixture _autoFixture;
+
+        private readonly string _metricName = "hangfire_job_count";
+        private readonly string _metricHelp = "Number of Hangfire jobs";
+        private readonly string _stateLabelName = "state";
 
         public PrometheusExporterTests()
         {
@@ -29,28 +33,43 @@ namespace Hangfire.Prometheus.UnitTests
         }
 
         [Fact]
-        public void FailedMetricGetsCreated()
+        public void MetricsWithAllStatesGetCreated()
         {
             HangfireJobStatistics hangfireJobStatistics = _autoFixture.Create<HangfireJobStatistics>();
             _mockHangfireMonitor.Setup(x => x.GetJobStatistics()).Returns(hangfireJobStatistics);
 
-            string metricName = "hangfire_job_count";
-            string metricHelp = "Number of Hangfire jobs";
-            string stateLabelName = "state";
             string failedLabelValue = "failed";
+            string enqueuedLabelValue = "enqueued";
+            string scheduledLabelValue = "scheduled";
+            string processingLabelValue = "processing";
+            string succeededLabelValue = "succeeded";
+            string retryLabelValue = "retry";
 
-            string expectedHelpText = $"# HELP {metricName} {metricHelp}\n# TYPE {metricName} gauge";
-            string expectedFailedMetricContent = $"{metricName}{{{stateLabelName}=\"{failedLabelValue}\"}} {hangfireJobStatistics.Failed}";
+            List<string> expectedStrings = new List<string>();
+
+            expectedStrings.Add($"# HELP {_metricName} {_metricHelp}\n# TYPE {_metricName} gauge");
+            expectedStrings.Add(GetMetricString(failedLabelValue, hangfireJobStatistics.Failed));
+            expectedStrings.Add(GetMetricString(enqueuedLabelValue, hangfireJobStatistics.Enqueued));
+            expectedStrings.Add(GetMetricString(scheduledLabelValue, hangfireJobStatistics.Scheduled));
+            expectedStrings.Add(GetMetricString(processingLabelValue, hangfireJobStatistics.Processing));
+            expectedStrings.Add(GetMetricString(succeededLabelValue, hangfireJobStatistics.Succeeded));
+            expectedStrings.Add(GetMetricString(retryLabelValue, hangfireJobStatistics.Retry));
 
             _classUnderTest.ExportHangfireStatistics();
-
             string actual = GetPrometheusContent();
 
-            Assert.Contains(expectedHelpText, actual);
-            Assert.Contains(expectedFailedMetricContent, actual);
+            foreach (string expected in expectedStrings)
+            {
+                Assert.Contains(expected, actual);
+            }
 
             _mockHangfireMonitor.Verify(x => x.GetJobStatistics(), Times.Once);
 
+        }
+
+        private string GetMetricString(string labelValue, double metricValue)
+        {
+            return $"{_metricName}{{{_stateLabelName}=\"{labelValue}\"}} {metricValue}";
         }
 
         private string GetPrometheusContent()
