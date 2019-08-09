@@ -17,6 +17,8 @@ namespace Hangfire.Prometheus.UnitTests
 
         private IFixture _autoFixture;
 
+        CollectorRegistry _collectorRegistry;
+
         private readonly string _metricName = "hangfire_job_count";
         private readonly string _metricHelp = "Number of Hangfire jobs";
         private readonly string _stateLabelName = "state";
@@ -33,7 +35,9 @@ namespace Hangfire.Prometheus.UnitTests
             _autoFixture = new Fixture();
 
             _mockHangfireMonitor = new Mock<IHangfireMonitorService>();
-            _classUnderTest = new PrometheusExporter(_mockHangfireMonitor.Object);
+
+            _collectorRegistry = Metrics.NewCustomRegistry();
+            _classUnderTest = new PrometheusExporter(_mockHangfireMonitor.Object, _collectorRegistry);
         }
 
         [Fact]
@@ -112,7 +116,7 @@ namespace Hangfire.Prometheus.UnitTests
             string content;
             using (MemoryStream myStream = new MemoryStream())
             {
-                Metrics.DefaultRegistry.CollectAndExportAsTextAsync(myStream).Wait();
+                _collectorRegistry.CollectAndExportAsTextAsync(myStream).Wait();
                 myStream.Seek(0, SeekOrigin.Begin);
                 using (StreamReader sr = new StreamReader(myStream))
                 {
