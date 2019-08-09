@@ -24,20 +24,27 @@ namespace Hangfire.Prometheus
 
         public PrometheusExporter(IHangfireMonitorService hangfireMonitorService, CollectorRegistry collectorRegistry)
         {
-            _hangfireMonitorService = hangfireMonitorService;
-            _collectorRegistry = collectorRegistry;
+            _hangfireMonitorService = hangfireMonitorService ?? throw new ArgumentNullException(nameof(hangfireMonitorService));
+            _collectorRegistry = collectorRegistry ?? throw new ArgumentNullException(nameof(collectorRegistry));
             _hangfireGauge = Metrics.WithCustomRegistry(_collectorRegistry).CreateGauge(_metricName, _metricHelp, _stateLabelName);
         }
 
         public void ExportHangfireStatistics()
         {
-            HangfireJobStatistics hangfireJobStatistics = _hangfireMonitorService.GetJobStatistics();
-            _hangfireGauge.WithLabels(_failedLabelValue).Set(hangfireJobStatistics.Failed);
-            _hangfireGauge.WithLabels(_scheduledLabelValue).Set(hangfireJobStatistics.Scheduled);
-            _hangfireGauge.WithLabels(_processingLabelValue).Set(hangfireJobStatistics.Processing);
-            _hangfireGauge.WithLabels(_enqueuedLabelValue).Set(hangfireJobStatistics.Enqueued);
-            _hangfireGauge.WithLabels(_succeededLabelValue).Set(hangfireJobStatistics.Succeeded);
-            _hangfireGauge.WithLabels(_retryLabelValue).Set(hangfireJobStatistics.Retry);
+            try
+            {
+                HangfireJobStatistics hangfireJobStatistics = _hangfireMonitorService.GetJobStatistics();
+                _hangfireGauge.WithLabels(_failedLabelValue).Set(hangfireJobStatistics.Failed);
+                _hangfireGauge.WithLabels(_scheduledLabelValue).Set(hangfireJobStatistics.Scheduled);
+                _hangfireGauge.WithLabels(_processingLabelValue).Set(hangfireJobStatistics.Processing);
+                _hangfireGauge.WithLabels(_enqueuedLabelValue).Set(hangfireJobStatistics.Enqueued);
+                _hangfireGauge.WithLabels(_succeededLabelValue).Set(hangfireJobStatistics.Succeeded);
+                _hangfireGauge.WithLabels(_retryLabelValue).Set(hangfireJobStatistics.Retry);
+            }
+            catch
+            {
+                //Swallow the exception here since we can't do anything with it.
+            }
         }
     }
 }

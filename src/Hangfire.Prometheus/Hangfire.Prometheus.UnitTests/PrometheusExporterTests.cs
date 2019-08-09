@@ -41,21 +41,16 @@ namespace Hangfire.Prometheus.UnitTests
         }
 
         [Fact]
+        public void ConstructorHangfireMonitorNullCheck() => Assert.Throws<ArgumentNullException>(() => new PrometheusExporter(null, _collectorRegistry));
+
+        [Fact]
+        public void ConstructorCollectorRegistryNullCheck() => Assert.Throws<ArgumentNullException>(() => new PrometheusExporter(_mockHangfireMonitor.Object, null));
+
+        [Fact]
         public void MetricsWithAllStatesGetCreated()
         {
             HangfireJobStatistics hangfireJobStatistics = _autoFixture.Create<HangfireJobStatistics>();
-            _mockHangfireMonitor.Setup(x => x.GetJobStatistics()).Returns(hangfireJobStatistics);
-            
-            List<string> expectedStrings = CreateExpectedStrings(hangfireJobStatistics);
-
-            _classUnderTest.ExportHangfireStatistics();
-            string actual = GetPrometheusContent();
-
-            foreach (string expected in expectedStrings)
-            {
-                Assert.Contains(expected, actual);
-            }
-
+            PerformMetricsTest(hangfireJobStatistics);
             _mockHangfireMonitor.Verify(x => x.GetJobStatistics(), Times.Once);
 
         }
@@ -67,31 +62,55 @@ namespace Hangfire.Prometheus.UnitTests
             for (int i = 0; i < count; i++)
             {
                 HangfireJobStatistics hangfireJobStatistics = _autoFixture.Create<HangfireJobStatistics>();
-                _mockHangfireMonitor.Setup(x => x.GetJobStatistics()).Returns(hangfireJobStatistics);
-
-                List<string> expectedStrings = CreateExpectedStrings(hangfireJobStatistics);
-
-                _classUnderTest.ExportHangfireStatistics();
-                string actual = GetPrometheusContent();
-
-                foreach (string expected in expectedStrings)
-                {
-                    Assert.Contains(expected, actual);
-                }
+                PerformMetricsTest(hangfireJobStatistics);
             }
 
             _mockHangfireMonitor.Verify(x => x.GetJobStatistics(), Times.Exactly(10));
         }
 
-        //[Fact]
-        //public void MetricsShouldNotGetPublishedOnException()
-        //{
-        //    _mockHangfireMonitor.Setup(x => x.GetJobStatistics()).Throws(new Exception());
-        //    string actual = GetPrometheusContent();
+        [Fact]
+        public void MetricsShouldNotGetPublishedFirstTimeOnException()
+        {
+            _mockHangfireMonitor.Setup(x => x.GetJobStatistics()).Throws(new Exception());
+            string actual = GetPrometheusContent();
 
-        //    Assert.DoesNotContain(_metricName, actual);
-        //    Assert.DoesNotContain(_metricHelp, actual);
-        //}
+            //The metric description will get published regardless, so we have to test for the labeled metrics.
+            Assert.DoesNotContain($"{_metricName}{{{_stateLabelName}=\"", actual);
+        }
+
+        [Fact]
+        public void MetricsShouldNotGetUpdatedOnException()
+        {
+            HangfireJobStatistics hangfireJobStatistics = _autoFixture.Create<HangfireJobStatistics>();
+            PerformMetricsTest(hangfireJobStatistics);
+
+            _mockHangfireMonitor.Setup(x => x.GetJobStatistics()).Throws(new Exception());
+            _classUnderTest.ExportHangfireStatistics();
+            VerifyPrometheusMetrics(hangfireJobStatistics);
+
+            hangfireJobStatistics = _autoFixture.Create<HangfireJobStatistics>();
+            PerformMetricsTest(hangfireJobStatistics);
+
+            _mockHangfireMonitor.Verify(x => x.GetJobStatistics(), Times.Exactly(3));
+        }
+
+        private void PerformMetricsTest(HangfireJobStatistics hangfireJobStatistics)
+        {
+            _mockHangfireMonitor.Setup(x => x.GetJobStatistics()).Returns(hangfireJobStatistics);
+            _classUnderTest.ExportHangfireStatistics();
+            VerifyPrometheusMetrics(hangfireJobStatistics);
+        }
+
+        private void VerifyPrometheusMetrics(HangfireJobStatistics hangfireJobStatistics)
+        {
+            List<string> expectedStrings = CreateExpectedStrings(hangfireJobStatistics);
+            string actual = GetPrometheusContent();
+
+            foreach (string expected in expectedStrings)
+            {
+                Assert.Contains(expected, actual);
+            }
+        }
 
         private List<string> CreateExpectedStrings(HangfireJobStatistics hangfireJobStatistics)
         {
