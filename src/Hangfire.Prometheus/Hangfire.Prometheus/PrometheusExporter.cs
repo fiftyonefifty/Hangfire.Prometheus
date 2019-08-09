@@ -5,7 +5,7 @@ using Prometheus;
 
 namespace Hangfire.Prometheus
 {
-    public class PrometheusExporter : IPrometheusExporter
+    public class HangfirePrometheusExporter : IPrometheusExporter
     {
         private readonly IHangfireMonitorService _hangfireMonitorService;
         private readonly CollectorRegistry _collectorRegistry;
@@ -22,7 +22,7 @@ namespace Hangfire.Prometheus
         private readonly string _succeededLabelValue = "succeeded";
         private readonly string _retryLabelValue = "retry";
 
-        public PrometheusExporter(IHangfireMonitorService hangfireMonitorService, CollectorRegistry collectorRegistry)
+        public HangfirePrometheusExporter(IHangfireMonitorService hangfireMonitorService, CollectorRegistry collectorRegistry)
         {
             _hangfireMonitorService = hangfireMonitorService ?? throw new ArgumentNullException(nameof(hangfireMonitorService));
             _collectorRegistry = collectorRegistry ?? throw new ArgumentNullException(nameof(collectorRegistry));

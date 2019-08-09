@@ -11,7 +11,7 @@ namespace Hangfire.Prometheus.UnitTests
 {
     public class PrometheusExporterTests
     {
-        private PrometheusExporter _classUnderTest;
+        private HangfirePrometheusExporter _classUnderTest;
 
         private Mock<IHangfireMonitorService> _mockHangfireMonitor;
 
@@ -37,14 +37,14 @@ namespace Hangfire.Prometheus.UnitTests
             _mockHangfireMonitor = new Mock<IHangfireMonitorService>();
 
             _collectorRegistry = Metrics.NewCustomRegistry();
-            _classUnderTest = new PrometheusExporter(_mockHangfireMonitor.Object, _collectorRegistry);
+            _classUnderTest = new HangfirePrometheusExporter(_mockHangfireMonitor.Object, _collectorRegistry);
         }
 
         [Fact]
-        public void ConstructorHangfireMonitorNullCheck() => Assert.Throws<ArgumentNullException>(() => new PrometheusExporter(null, _collectorRegistry));
+        public void ConstructorHangfireMonitorNullCheck() => Assert.Throws<ArgumentNullException>(() => new HangfirePrometheusExporter(null, _collectorRegistry));
 
         [Fact]
-        public void ConstructorCollectorRegistryNullCheck() => Assert.Throws<ArgumentNullException>(() => new PrometheusExporter(_mockHangfireMonitor.Object, null));
+        public void ConstructorCollectorRegistryNullCheck() => Assert.Throws<ArgumentNullException>(() => new HangfirePrometheusExporter(_mockHangfireMonitor.Object, null));
 
         [Fact]
         public void MetricsWithAllStatesGetCreated()
