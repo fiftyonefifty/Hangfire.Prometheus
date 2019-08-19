@@ -1,11 +1,10 @@
-﻿using Moq;
+﻿using AutoFixture;
+using Moq;
 using Prometheus;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Xunit;
-using AutoFixture;
 using System.IO;
+using Xunit;
 
 namespace Hangfire.Prometheus.UnitTests
 {

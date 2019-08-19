@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Prometheus;
+﻿using Prometheus;
+using System;
 
 namespace Hangfire.Prometheus
 {
