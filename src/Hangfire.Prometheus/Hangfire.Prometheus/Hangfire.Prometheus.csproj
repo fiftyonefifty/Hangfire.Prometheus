@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Hangfire" Version="1.7.1" />
+    <PackageReference Include="prometheus-net" Version="3.1.4" />
   </ItemGroup>
 
 </Project>
