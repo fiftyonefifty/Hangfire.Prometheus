@@ -15,7 +15,18 @@ The plugin uses the Hangfire JobStorage class to export metric "hangfire_job_cou
 Hangfire.Prometheus plugin is initialized in Configure() using UseHangfirePrometheusExporter() method. Hangfire job storage must already be initialized.
 
 ```
-Example to follow
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddHangfire(...);
+}
+
+public void Configure(IApplicationBuilder app)
+{
+    app.UsePrometheusHangfireExporter();
+    app.UseMetricServer();
+    app.UseHangfireDashboard();
+    app.UseHangfireServer();
+}
 ```
 
 # Multiple Servers
