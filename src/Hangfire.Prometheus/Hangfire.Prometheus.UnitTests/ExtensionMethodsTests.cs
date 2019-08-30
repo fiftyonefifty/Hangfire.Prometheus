@@ -16,7 +16,7 @@ namespace Hangfire.Prometheus.UnitTests
             appBuilderMock.Setup(x => x.ApplicationServices.GetService(typeof(JobStorage)))
                           .Returns(null);
 
-            Exception ex = Assert.Throws<Exception>(() => appBuilderMock.Object.UsePrometheusHangfireExporter());
+            Exception ex = Assert.Throws<Exception>(() => appBuilderMock.Object.UsePrometheusHangfireExporter(new HangfirePrometheusSettings()));
             Assert.Equal("Cannot find Hangfire JobStorage class.", ex.Message);
         }
 
@@ -27,7 +27,7 @@ namespace Hangfire.Prometheus.UnitTests
             appBuilderMock.Setup(x => x.ApplicationServices.GetService(typeof(JobStorage)))
                           .Returns(new Mock<JobStorage>().Object);
 
-            appBuilderMock.Object.UsePrometheusHangfireExporter();
+            appBuilderMock.Object.UsePrometheusHangfireExporter(new HangfirePrometheusSettings());
         }
     }
 }

@@ -18,6 +18,8 @@ namespace Hangfire.Prometheus.UnitTests
 
         CollectorRegistry _collectorRegistry;
 
+        HangfirePrometheusSettings _settings;
+
         private readonly string _metricName = "hangfire_job_count";
         private readonly string _metricHelp = "Number of Hangfire jobs";
         private readonly string _stateLabelName = "state";
@@ -36,14 +38,24 @@ namespace Hangfire.Prometheus.UnitTests
             _mockHangfireMonitor = new Mock<IHangfireMonitorService>();
 
             _collectorRegistry = Metrics.NewCustomRegistry();
-            _classUnderTest = new HangfirePrometheusExporter(_mockHangfireMonitor.Object, _collectorRegistry);
+
+            _settings = new HangfirePrometheusSettings
+            {
+                CollectorRegistry = _collectorRegistry
+            };
+
+            _classUnderTest = new HangfirePrometheusExporter(_mockHangfireMonitor.Object, _settings);
         }
 
         [Fact]
-        public void ConstructorHangfireMonitorNullCheck() => Assert.Throws<ArgumentNullException>(() => new HangfirePrometheusExporter(null, _collectorRegistry));
+        public void ConstructorHangfireMonitorNullCheck() => Assert.Throws<ArgumentNullException>(() => new HangfirePrometheusExporter(null, _settings));
 
         [Fact]
-        public void ConstructorCollectorRegistryNullCheck() => Assert.Throws<ArgumentNullException>(() => new HangfirePrometheusExporter(_mockHangfireMonitor.Object, null));
+        public void ConstructorCollectorRegistryNullCheck()
+        {
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => new HangfirePrometheusExporter(_mockHangfireMonitor.Object, new HangfirePrometheusSettings { CollectorRegistry = null }));
+            Assert.Equal("CollectorRegistry setting cannot be null.", ex.Message);
+        }
 
         [Fact]
         public void MetricsWithAllStatesGetCreated()
@@ -78,8 +90,10 @@ namespace Hangfire.Prometheus.UnitTests
         }
 
         [Fact]
-        public void MetricsShouldNotGetUpdatedOnException()
+        public void MetricsShouldNotGetUpdatedOnExceptionWhenSettingDisabled()
         {
+            _settings.FailScrapeOnException = false;
+
             HangfireJobStatistics hangfireJobStatistics = _autoFixture.Create<HangfireJobStatistics>();
             PerformMetricsTest(hangfireJobStatistics);
 
@@ -91,6 +105,20 @@ namespace Hangfire.Prometheus.UnitTests
             PerformMetricsTest(hangfireJobStatistics);
 
             _mockHangfireMonitor.Verify(x => x.GetJobStatistics(), Times.Exactly(3));
+        }
+
+        [Fact]
+        public void ScrapeShoudFailOnExceptionWhenSettingEnabled()
+        {
+            HangfireJobStatistics hangfireJobStatistics = _autoFixture.Create<HangfireJobStatistics>();
+            PerformMetricsTest(hangfireJobStatistics);
+
+            _settings.FailScrapeOnException = true;
+            Exception exToThrow = new Exception();
+            _mockHangfireMonitor.Setup(x => x.GetJobStatistics()).Throws(exToThrow);
+            ScrapeFailedException ex = Assert.Throws<ScrapeFailedException>(() => _classUnderTest.ExportHangfireStatistics());
+            Assert.Same(exToThrow, ex.InnerException);
+            Assert.Equal("Scrape failed due to exception. See InnerException for details.", ex.Message);
         }
 
         private void PerformMetricsTest(HangfireJobStatistics hangfireJobStatistics)

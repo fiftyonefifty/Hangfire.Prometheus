@@ -6,6 +6,7 @@ namespace Hangfire.Prometheus
     public class HangfirePrometheusExporter : IPrometheusExporter
     {
         private readonly IHangfireMonitorService _hangfireMonitorService;
+        private readonly HangfirePrometheusSettings _settings;
         private readonly CollectorRegistry _collectorRegistry;
         private readonly Gauge _hangfireGauge;
 
@@ -20,10 +21,11 @@ namespace Hangfire.Prometheus
         private readonly string _succeededLabelValue = "succeeded";
         private readonly string _retryLabelValue = "retry";
 
-        public HangfirePrometheusExporter(IHangfireMonitorService hangfireMonitorService, CollectorRegistry collectorRegistry)
+        public HangfirePrometheusExporter(IHangfireMonitorService hangfireMonitorService, HangfirePrometheusSettings settings)
         {
             _hangfireMonitorService = hangfireMonitorService ?? throw new ArgumentNullException(nameof(hangfireMonitorService));
-            _collectorRegistry = collectorRegistry ?? throw new ArgumentNullException(nameof(collectorRegistry));
+            _settings = settings;
+            _collectorRegistry = settings.CollectorRegistry ?? throw new ArgumentException("CollectorRegistry setting cannot be null.");
             _hangfireGauge = Metrics.WithCustomRegistry(_collectorRegistry).CreateGauge(_metricName, _metricHelp, _stateLabelName);
         }
 
@@ -39,9 +41,12 @@ namespace Hangfire.Prometheus
                 _hangfireGauge.WithLabels(_succeededLabelValue).Set(hangfireJobStatistics.Succeeded);
                 _hangfireGauge.WithLabels(_retryLabelValue).Set(hangfireJobStatistics.Retry);
             }
-            catch
+            catch (Exception ex)
             {
-                //Swallow the exception here since we can't do anything with it.
+                if (_settings.FailScrapeOnException)
+                {
+                    throw new ScrapeFailedException("Scrape failed due to exception. See InnerException for details.", ex);
+                }
             }
         }
     }

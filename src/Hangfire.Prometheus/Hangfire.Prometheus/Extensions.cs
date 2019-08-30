@@ -11,7 +11,7 @@ namespace Hangfire.Prometheus
         /// </summary>
         /// <param name="app">IApplicationBuilder instance</param>
         /// <returns></returns>
-        public static IApplicationBuilder UsePrometheusHangfireExporter(this IApplicationBuilder app)
+        public static IApplicationBuilder UsePrometheusHangfireExporter(this IApplicationBuilder app, HangfirePrometheusSettings settings)
         {
             JobStorage js = (JobStorage)app.ApplicationServices.GetService(typeof(JobStorage));
             if (js == null)
@@ -19,7 +19,7 @@ namespace Hangfire.Prometheus
                 throw new Exception("Cannot find Hangfire JobStorage class.");
             }
             IHangfireMonitorService hangfireMonitor = new HangfireMonitorService(js);
-            IPrometheusExporter exporter = new HangfirePrometheusExporter(hangfireMonitor, Metrics.DefaultRegistry);
+            IPrometheusExporter exporter = new HangfirePrometheusExporter(hangfireMonitor, settings);
             Metrics.DefaultRegistry.AddBeforeCollectCallback(() => exporter.ExportHangfireStatistics());
             return app;
         }
