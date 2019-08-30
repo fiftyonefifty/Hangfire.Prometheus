@@ -25,7 +25,7 @@ namespace Hangfire.Prometheus
         {
             _hangfireMonitorService = hangfireMonitorService ?? throw new ArgumentNullException(nameof(hangfireMonitorService));
             _settings = settings;
-            _collectorRegistry = settings.CollectorRegistry ?? throw new ArgumentException("CollectorRegistry setting cannot be null.");
+            _collectorRegistry = settings.CollectorRegistry;
             _hangfireGauge = Metrics.WithCustomRegistry(_collectorRegistry).CreateGauge(_metricName, _metricHelp, _stateLabelName);
         }
 

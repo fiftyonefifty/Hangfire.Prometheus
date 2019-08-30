@@ -51,13 +51,6 @@ namespace Hangfire.Prometheus.UnitTests
         public void ConstructorHangfireMonitorNullCheck() => Assert.Throws<ArgumentNullException>(() => new HangfirePrometheusExporter(null, _settings));
 
         [Fact]
-        public void ConstructorCollectorRegistryNullCheck()
-        {
-            ArgumentException ex = Assert.Throws<ArgumentException>(() => new HangfirePrometheusExporter(_mockHangfireMonitor.Object, new HangfirePrometheusSettings { CollectorRegistry = null }));
-            Assert.Equal("CollectorRegistry setting cannot be null.", ex.Message);
-        }
-
-        [Fact]
         public void MetricsWithAllStatesGetCreated()
         {
             HangfireJobStatistics hangfireJobStatistics = _autoFixture.Create<HangfireJobStatistics>();
