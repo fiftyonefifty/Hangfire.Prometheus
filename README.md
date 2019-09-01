@@ -29,13 +29,28 @@ public void Configure(IApplicationBuilder app)
 }
 ```
 
+## Settings
+
+The following settings are available for this plugin using Hangfire.Prometheus.HangfirePrometheusSettings class:
+
+|     Setting Name      |             Type             |    Default Setting     |                                             Description                                             |
+| --------------------- | ---------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------|
+| CollectorRegistry     | Prometheus.CollectorRegistry |Metrics.DefaultRegistry | Prometheus CollectorRegistry to use.                                                                |
+| FailScrapeOnException | Boolean                      | true                   | Controls whether to fail the scrape if there is an exception during Hangifre statistics collection. |
+
+An instance of HangfirePrometheusSettings class can be passed to UsePrometheusHangfireExporter() to use settings other than defaults:
+
+```
+public void Configure(IApplicationBuilder app)
+{
+    CollectionRegistry myRegistry = Metrics.NewCustomRegistry();
+    app.UsePrometheusHangfireExporter(new HangfirePrometheusSettings { CollectorRegistry = myRegistry });
+    app.UseMetricServer(...);
+}
+```
+
+## Simultaneous Scrapes
+Simultaneous scrapes proceed at the same time. Care should be taken when setting the scrape interval period to minimize simultaneous scrapes.
+
 # Multiple Servers
 This plugin uses Hangfire job storage to retrieve job statistics. If multiple Hangfire servers are using the same job storage only a single instance should be exporting Hangfire metrics or only a single instance must be scraped. 
-
-# Behavior
-The following is the behavior of this plugin:
-
-* Uses default metrics registry (Metrics.DefaultRegistry).
-* Uses job storage registered with Hangfire.
-* Exception during metrics update *_does not block_* scrapes.
-* Simultaneous scrapes proceed at the same time.
