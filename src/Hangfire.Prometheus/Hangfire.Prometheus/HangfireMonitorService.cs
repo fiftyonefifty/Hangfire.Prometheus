@@ -1,4 +1,5 @@
-﻿using Hangfire.Storage.Monitoring;
+﻿using Hangfire.Storage;
+using Hangfire.Storage.Monitoring;
 
 namespace Hangfire.Prometheus
 {
@@ -15,18 +16,22 @@ namespace Hangfire.Prometheus
         public HangfireJobStatistics GetJobStatistics()
         {
             StatisticsDto hangfireStats = _hangfireJobStorage.GetMonitoringApi().GetStatistics();
-            long retryJobs = _hangfireJobStorage.GetConnection().GetAllItemsFromSet(retrySetName).Count;
 
-            return new HangfireJobStatistics
+            using (IStorageConnection storageConnection = _hangfireJobStorage.GetConnection())
             {
-                Failed = hangfireStats.Failed,
-                Enqueued = hangfireStats.Enqueued,
-                Scheduled = hangfireStats.Scheduled,
-                Processing = hangfireStats.Processing,
-                Succeeded = hangfireStats.Succeeded,
-                Retry = retryJobs
-            };
-        
+
+                long retryJobs = storageConnection.GetAllItemsFromSet(retrySetName).Count;
+
+                return new HangfireJobStatistics
+                {
+                    Failed = hangfireStats.Failed,
+                    Enqueued = hangfireStats.Enqueued,
+                    Scheduled = hangfireStats.Scheduled,
+                    Processing = hangfireStats.Processing,
+                    Succeeded = hangfireStats.Succeeded,
+                    Retry = retryJobs
+                };
+            }
         }
     }
 }

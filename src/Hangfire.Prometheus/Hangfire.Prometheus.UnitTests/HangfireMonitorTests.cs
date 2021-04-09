@@ -17,6 +17,7 @@ namespace Hangfire.Prometheus.UnitTests
         private HashSet<string> _expectedRetrySet;
         Mock<JobStorage> _mockStorage;
         IHangfireMonitorService _hangfireMonitorService;
+        Mock<IStorageConnection> _storageConnection;
 
         public HangfireMonitorTests()
         {
@@ -24,14 +25,15 @@ namespace Hangfire.Prometheus.UnitTests
             _expectedRetrySet = new HashSet<string>();
             _expectedRetrySet.AddMany(() => _fixture.Create<string>(), new Random().Next(100));
 
-            Mock<IStorageConnection> storageConnection = new Mock<IStorageConnection>();
-            storageConnection.Setup(x => x.GetAllItemsFromSet(retryKey)).Returns(_expectedRetrySet);
+            _storageConnection = new Mock<IStorageConnection>();
+            _storageConnection.Setup(x => x.GetAllItemsFromSet(retryKey)).Returns(_expectedRetrySet);
+            _storageConnection.Setup(x => x.Dispose());
 
             Mock<IMonitoringApi> mockMonitoringApi = new Mock<IMonitoringApi>();
             mockMonitoringApi.Setup(x => x.GetStatistics()).Returns(_expectedStats);
 
             _mockStorage = new Mock<JobStorage>();
-            _mockStorage.Setup(x => x.GetConnection()).Returns(storageConnection.Object);
+            _mockStorage.Setup(x => x.GetConnection()).Returns(_storageConnection.Object);
             _mockStorage.Setup(x => x.GetMonitoringApi()).Returns(mockMonitoringApi.Object);
 
             _hangfireMonitorService = new HangfireMonitorService(_mockStorage.Object);
@@ -41,13 +43,20 @@ namespace Hangfire.Prometheus.UnitTests
         public void ShouldGetNumberOfJobs()
         {
             HangfireJobStatistics actual = _hangfireMonitorService.GetJobStatistics();
-
             Assert.Equal(_expectedStats.Failed, actual.Failed);
             Assert.Equal(_expectedStats.Enqueued, actual.Enqueued);
             Assert.Equal(_expectedStats.Scheduled, actual.Scheduled);
             Assert.Equal(_expectedStats.Processing, actual.Processing);
             Assert.Equal(_expectedStats.Succeeded, actual.Succeeded);
             Assert.Equal(_expectedRetrySet.Count, actual.Retry);
+        }
+
+        [Fact]
+        public void ShouldDisposeOfStorageConnection()
+        {
+            _hangfireMonitorService.GetJobStatistics();
+            _storageConnection.Verify(x => x.Dispose(), Times.AtLeastOnce);
+
         }
     }
 }
